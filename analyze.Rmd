@@ -1,0 +1,107 @@
+---
+title: "Hypothermia Electrolyte Protocol - Regression Models"
+author: "Michael Ha, Jennifer Gass"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+---
+
+```{r data, echo=FALSE, message=FALSE}
+library(readxl)
+library(dplyr)
+
+data <- read_excel("data/data.xlsx")
+names(data) <- make.names(names(data))
+
+data <- data %>%
+    mutate(RRT.prior.to.arrest = ifelse(RRT.prior.to.arrest == "Y", TRUE, FALSE),
+           Initial.rhythm = factor(Initial.rhythm)) %>%
+    filter(!is.na(Patient)) %>%
+    rename(Age = Age..Years..Visit.)
+
+```
+
+## Initial Potassium
+
+### Linear Regression Model
+
+```{r}
+regr <- select(data, Age, Initial.rhythm:First.Potassium) %>%
+    filter(!is.na(First.Potassium))
+
+mod1 <- lm(First.Potassium ~ ., data = regr)
+
+summary(mod1)
+```
+
+### Backwards Stepwise Regression
+
+```{r}
+mod2 <- step(mod1, trace = 0, k = log(nrow(regr)))
+
+summary(mod2)
+```
+
+### Coefficients of the model
+
+```{r}
+exp(coef(mod2))
+```
+
+### Residuals Plot
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod2)
+```
+
+## Initial Potassium Below
+
+```{r}
+regr <- select(data, Age, Initial.rhythm:SCr.on.admission, Rewarmed.Potassium...below) %>%
+    filter(!is.na(Rewarmed.Potassium...below)) %>%
+    mutate(Rewarmed.Potassium.Low = ifelse(Rewarmed.Potassium...below >= 0.5, TRUE, FALSE)) %>%
+    select(-Rewarmed.Potassium...below)
+
+mod1 <- glm(Rewarmed.Potassium.Low ~ ., data = regr, family = binomial)
+
+summary(mod1)
+```
+
+### Backwards Stepwise Regression
+
+```{r}
+mod2 <- step(mod1, trace = 0, k = log(nrow(regr)))
+
+summary(mod2)
+```
+
+### P-value of the model
+
+```{r}
+1-pchisq(mod2$deviance, mod2$df.residual)
+```
+
+### Coefficients of the model
+
+```{r}
+exp(coef(mod2))
+```
+
+### Residuals Plot
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod2)
+```
+
+
+### References
+
+Data was processed using `r R.Version()$version.string` on a `r R.Version()$platform` system.
+
+Prepared by: Brian Gulbis
+
+```{r echo=FALSE}
+citation()
+```
+
