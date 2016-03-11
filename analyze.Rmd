@@ -1,5 +1,6 @@
 ---
-title: "Hypothermia Electrolyte Protocol - Regression Models"
+title: "Hypothermia Electrolyte Protocol"
+subtitle: "Regression Models"
 author: "Michael Ha, Jennifer Gass"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
@@ -76,14 +77,12 @@ par(mfrow=c(2,2))
 plot(mod2)
 ```
 
-## Rewarmed Potassium Below Goal >= 50% of Time
+## Initial Magnesium
+### Linear Regression Model
 
 ```{r}
-regr <- select(data, Age, Initial.rhythm:SCr.on.admission, Rewarmed.Potassium...below) %>%
-    mutate(Rewarmed.Potassium.Low = ifelse(Rewarmed.Potassium...below >= 0.5, TRUE, FALSE)) %>%
-    select(-Rewarmed.Potassium...below)
-
-mod1 <- glm(Rewarmed.Potassium.Low ~ ., data = regr, family = binomial, na.action = na.exclude)
+regr <- select(data, Age, Initial.rhythm:SCr.on.admission, First.Magnesium)
+mod1 <- lm(First.Magnesium ~ ., data = regr, na.action = na.exclude)
 ```
 
 #### Model Statistics
@@ -100,7 +99,6 @@ pander(tidy(mod1))
 
 ```{r}
 mod2 <- step(mod1, trace = 0)
-# , k = log(nrow(regr))
 ```
 
 #### Model Statistics
@@ -120,7 +118,77 @@ par(mfrow=c(2,2))
 plot(mod2)
 ```
 
-### References
+## Initial Phosphate
+### Linear Regression Model
+
+```{r}
+regr <- select(data, Age, Initial.rhythm:SCr.on.admission, First.Phosphate)
+mod1 <- lm(First.Phosphate ~ ., data = regr, na.action = na.exclude)
+```
+
+#### Model Statistics
+```{r echo=FALSE}
+pander(glance(mod1))
+```
+
+#### Coefficients
+```{r echo=FALSE}
+pander(tidy(mod1))
+```
+
+### Backwards Stepwise Regression
+
+```{r}
+mod2 <- step(mod1, trace = 0)
+```
+
+#### Model Statistics
+```{r echo=FALSE}
+pander(glance(mod2))
+```
+
+#### Coefficients
+```{r echo=FALSE}
+pander(tidy(mod2))
+```
+
+#### Confidence Intervals
+```{r echo=FALSE}
+pander(confint(mod2))
+```
+
+
+#### Residuals Plot
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod2)
+```
+
+## Rewarmed Potassium Below Goal >= 50% of Time
+
+```{r echo=FALSE}
+regr <- select(data, Age, Initial.rhythm:SCr.on.admission, Rewarmed.Potassium...below) %>%
+    mutate(Rewarmed.Potassium.Low = ifelse(Rewarmed.Potassium...below >= 0.5, TRUE, FALSE)) %>%
+    select(-Rewarmed.Potassium...below)
+
+mod1 <- glm(Rewarmed.Potassium.Low ~ ., data = regr, family = binomial, na.action = na.exclude)
+```
+
+#### Model Statistics
+```{r echo=FALSE}
+pander(glance(mod1))
+```
+
+#### Coefficients
+```{r echo=FALSE}
+pander(tidy(mod1))
+pander(exp(coef(mod1)))
+pander(exp(confint(mod1)))
+pander(anova(mod1))
+```
+
+## References
 
 Data was processed using `r R.Version()$version.string` on a `r R.Version()$platform` system.
 
